@@ -32,7 +32,6 @@ join (
         sum(case when a.status NOT IN ('returned','return_pending') then ROUND(c.amount/100.0,2) else 0 end) as total_lifetime_value,
         sum(case when a.status NOT IN ('returned','return_pending') then ROUND(c.amount/100.0,2) else 0 end)/NULLIF(count(case when a.status NOT IN ('returned','return_pending') then 1 end),0) as avg_non_returned_order_value,
         array_agg(distinct a.id) as order_ids
-
     from (
       select
         row_number() over (partition by user_id order by order_date, id) as user_order_seq,
@@ -51,7 +50,6 @@ join (
     on a.id = c.orderid
 
     where a.status NOT IN ('pending') and c.status != 'fail'
-
     group by b.id, b.name, b.last_name, b.first_name
 
 ) customer_order_history

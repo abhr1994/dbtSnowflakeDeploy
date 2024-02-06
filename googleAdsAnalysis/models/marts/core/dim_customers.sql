@@ -33,4 +33,5 @@ final as (
     left join customer_orders using (customer_id)
 )
 
+
 select * from final

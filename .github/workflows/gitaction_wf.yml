@@ -49,15 +49,14 @@ jobs:
             echo "$file was changed"
             if [[ $file == *.sql ]]; then
               filename=$(basename $file .sql)
-              list_of_models+=$filename","
+              list_of_models+=$filename" "
             fi
           done
           if [ -z "$list_of_models" ]; then
             echo "No models to build"
           else
-            final_models_list="${list_of_models%,}"
-            echo "Running: dbt build -m $final_models_list";
-            dbt build -m $final_models_list;
+            echo "Running: dbt build -m $list_of_models";
+            dbt build -m $list_of_models;
           fi
           exit_code=$?
           if [ $exit_code -ne 0 ]; then
