@@ -1,0 +1,23 @@
+googleAdsAnalysis:
+  outputs:
+    dev:
+      account: "{{ env_var('SF_ACCOUNT') }}"
+      database: DBT_DEV_ANALYTICS
+      password: "{{ env_var('DBT_PASSWORD') }}"
+      role: ACCOUNTADMIN
+      schema: PUBLIC
+      threads: 1
+      type: snowflake
+      user: "{{ env_var('DBT_USER') }}"
+      warehouse: DEMO_WH
+    prod:
+      account: "{{ env_var('SF_ACCOUNT') }}"
+      database: DBT_PROD_ANALYTICS
+      password: "{{ env_var('DBT_PASSWORD') }}"
+      role: ACCOUNTADMIN
+      schema: PUBLIC
+      threads: 4
+      type: snowflake
+      user: "{{ env_var('DBT_USER') }}"
+      warehouse: DEMO_WH
+  target: dev
