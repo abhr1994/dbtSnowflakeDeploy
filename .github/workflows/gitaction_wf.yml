@@ -8,8 +8,10 @@ on:
   workflow_dispatch: # Manually triggered workflow
 
 jobs:
-  run_python_script:
+  run_dbt_models:
     runs-on: ubuntu-latest
+    outputs:
+      step_output: ${{ steps.build_dbt.outputs.output }}
     env:
       SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
       DBT_PASSWORD: ${{ secrets.DBT_PASSWORD }}
@@ -20,6 +22,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.10.13 # Change this to your Python version
+
+      - name: Install dependencies
+        if: github.event_name == 'pull_request'
+        run: pip install -r requirements.txt # Modify this according to your project setup
 
       - name: Get changed files
         id: changed-files
@@ -27,11 +37,11 @@ jobs:
 
 
       - name: Build only the modified dbt models
-        id: build_test
+        id: build_dbt
+        if: github.event_name == 'pull_request'
         env:
           ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
-          echo "Hello Abhishek";
           cd googleAdsAnalysis/;
           dbt deps;
           dbt run-operation clone_database --args "{'source_database':'DBT_PROD_ANALYTICS','destination_database':'DBT_DEV_ANALYTICS'}";
@@ -49,19 +59,24 @@ jobs:
           if [ -z "$list_of_models" ]; then
             echo "No models to build"
           else
-            echo "dbt build -m $list_of_models";
+            output=$(dbt build -m $list_of_models)
+            echo "::set-output name=output::$output"
           fi
-
+          exit_code=$?
+          if [ $exit_code -ne 0 ]; then
+              echo "Command failed with exit code $exit_code"
+              exit $exit_code
+          fi
         continue-on-error: true
 
       - name: Update Pull Request
         uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
         env:
-          PLAN: "${{ steps.build_test.outputs.stdout }}"
+          PLAN: "${{ steps.build_test.outputs.output }}"
         with:
           github-token: ${{ secrets.AR_GITHUB_TOKEN }}
           script: |
-            console.log(Object.keys(${{ steps.build_test.outputs.stdout }}));
             const output = `#### DBT Build Status 📖\`${{ steps.build_test.outcome }}\`
             
             <details><summary>Show DBT Build Output</summary>
@@ -80,3 +95,16 @@ jobs:
               repo: context.repo.repo,
               body: output
             })
+
+
+      - name: Check if Step build_test failed
+        if: ${{ steps.build_test.outcome == 'failure' }}
+        run: |
+          echo "Step dbt build has failed. Failing the workflow."
+          exit 1
+
+      - name: Deploy DBT Models in Production by running the workflow action manually on main branch
+        id: deploy
+        if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+        run: cd googleAdsAnalysis/; dbt deps; dbt build -t prod
+
