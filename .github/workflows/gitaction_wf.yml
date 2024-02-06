@@ -31,6 +31,9 @@ jobs:
         env:
           ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
+          cd googleAdsAnalysis/;
+          dbt deps;
+          dbt run-operation clone_database --args "{'source_database':'DBT_PROD_ANALYTICS','destination_database':'DBT_DEV_ANALYTICS'}";
           list_of_models="";
           for file in ${ALL_CHANGED_FILES}; do
             echo "$file was changed"
@@ -42,7 +45,37 @@ jobs:
               fi
             fi
           done
-          echo "dbt build -m $list_of_models"
+          if [ -z "$list_of_models" ]; then
+            echo "No models to build"
+          else
+            echo "dbt build -m $list_of_models";
+          fi
 
         continue-on-error: true
 
+      - name: Update Pull Request
+        uses: actions/github-script@v6
+        env:
+          PLAN: "${{ steps.build_test.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.AR_GITHUB_TOKEN }}
+          script: |
+            console.log("#### DBT Build Output 📖", '${{ steps.build_test.outputs }}');
+            const output = `#### DBT Build Status 📖\`${{ steps.build_test.outcome }}\`
+            
+            <details><summary>Show DBT Build Output</summary>
+            
+            \`\`\`dbt\n
+            ${process.env.PLAN}
+            \`\`\`
+            
+            </details>
+            
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
