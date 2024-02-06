@@ -39,7 +39,6 @@ join (
         *
       from {{ source('jaffle_shop', 'orders') }}
     ) a
-
     join (
       select
         first_name || ' ' || last_name as name,
