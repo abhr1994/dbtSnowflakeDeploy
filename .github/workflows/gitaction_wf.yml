@@ -10,6 +10,8 @@ on:
 jobs:
   run_dbt_models:
     runs-on: ubuntu-latest
+    outputs:
+      step_output: ${{ steps.build_dbt.outputs.output }}
     env:
       SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
       DBT_PASSWORD: ${{ secrets.DBT_PASSWORD }}
