@@ -37,7 +37,7 @@ jobs:
 
 
       - name: Build only the modified dbt models
-        id: build_dbt
+        id: build_test
         if: github.event_name == 'pull_request'
         env:
           ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
@@ -59,8 +59,7 @@ jobs:
           if [ -z "$list_of_models" ]; then
             echo "No models to build"
           else
-            output=$(dbt build -m $list_of_models)
-            echo "::set-output name=output::$output"
+            dbt build -m $list_of_models;
           fi
           exit_code=$?
           if [ $exit_code -ne 0 ]; then
@@ -72,21 +71,10 @@ jobs:
       - name: Update Pull Request
         uses: actions/github-script@v6
         if: github.event_name == 'pull_request'
-        env:
-          PLAN: "${{ steps.build_test.outputs.output }}"
         with:
           github-token: ${{ secrets.AR_GITHUB_TOKEN }}
           script: |
             const output = `#### DBT Build Status 📖\`${{ steps.build_test.outcome }}\`
-            
-            <details><summary>Show DBT Build Output</summary>
-            
-            \`\`\`dbt\n
-            ${process.env.PLAN}
-            \`\`\`
-            
-            </details>
-            
             *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
             
             github.rest.issues.createComment({
@@ -95,7 +83,6 @@ jobs:
               repo: context.repo.repo,
               body: output
             })
-
 
       - name: Check if Step build_test failed
         if: ${{ steps.build_test.outcome == 'failure' }}
