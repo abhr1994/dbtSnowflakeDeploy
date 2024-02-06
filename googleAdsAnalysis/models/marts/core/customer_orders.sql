@@ -19,7 +19,6 @@ join (
 on orders.user_id = customers.id
 
 join (
-
     select
         b.id as customer_id,
         b.name as full_name,

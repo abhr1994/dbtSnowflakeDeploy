@@ -48,18 +48,16 @@ jobs:
           for file in ${ALL_CHANGED_FILES}; do
             echo "$file was changed"
             if [[ $file == *.sql ]]; then
-              if [ -z "$sql_files" ]; then
-                list_of_models="$(basename $file .sql)"
-              else
-                list_of_models="list_of_models,$(basename $file .sql)"
-              fi
+              filename=$(basename $file .sql)
+              list_of_models+=$filename","
             fi
           done
           if [ -z "$list_of_models" ]; then
             echo "No models to build"
           else
-            echo "Running: dbt build -m $list_of_models";
-            dbt build -m $list_of_models;
+            final_models_list="${list_of_models%,}"
+            echo "Running: dbt build -m $final_models_list";
+            dbt build -m $final_models_list;
           fi
           exit_code=$?
           if [ $exit_code -ne 0 ]; then
