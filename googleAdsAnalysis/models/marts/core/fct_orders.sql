@@ -10,6 +10,7 @@ order_payments as (
     from payments
     group by 1
 )
+
 select
     orders.order_id,
     orders.customer_id,

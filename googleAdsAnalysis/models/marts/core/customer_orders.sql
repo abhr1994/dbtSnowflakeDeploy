@@ -17,6 +17,7 @@ join (
       from {{ source('jaffle_shop', 'customers') }}
 ) customers
 on orders.user_id = customers.id
+
 join (
 
     select
