@@ -74,11 +74,12 @@ jobs:
         with:
           github-token: ${{ secrets.AR_GITHUB_TOKEN }}
           script: |
+            echo ${process.env.PLAN};
             const output = `#### DBT Build Status 📖\`${{ steps.build_test.outcome }}\`
             
             <details><summary>Show DBT Build Output</summary>
             
-            \`\`\`\n
+            \`\`\`dbt\n
             ${process.env.PLAN}
             \`\`\`
             
@@ -93,7 +94,15 @@ jobs:
               body: output
             })
 
+
+      - name: Check if Step build_test failed
+        if: ${{ steps.build_test.outcome == 'failure' }}
+        run: |
+          echo "Step dbt build has failed. Failing the workflow."
+          exit 1
+
       - name: Deploy DBT Models in Production by running the workflow action manually on main branch
         id: deploy
         if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
         run: cd googleAdsAnalysis/; dbt deps; dbt build -t prod
+
