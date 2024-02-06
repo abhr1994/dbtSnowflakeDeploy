@@ -33,7 +33,7 @@ jobs:
         uses: tj-actions/changed-files@v42
         with:
           files: |
-            googleAdsAnalysis/models/*.sql
+            googleAdsAnalysis/models/**.sql
 
       - name: Build only the modified dbt models
         id: build_test
