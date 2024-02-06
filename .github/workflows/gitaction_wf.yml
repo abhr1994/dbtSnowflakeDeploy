@@ -23,7 +23,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.10 # Change this to your Python version
+          python-version: 3.10.11 # Change this to your Python version
 
       - name: Install dependencies
         run: pip install -r requirements.txt # Modify this according to your project setup
@@ -32,9 +32,8 @@ jobs:
         id: changed-files
         uses: tj-actions/changed-files@v42
         with:
-          # Avoid using single or double quotes for multiline patterns
           files: |
-            **.sql
+            googleAdsAnalysis/models/*.sql
 
       - name: Build only the modified dbt models
         id: build_test

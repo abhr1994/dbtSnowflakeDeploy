@@ -10,7 +10,6 @@ select
     orders.status as order_status,
     payments.status as payment_status
 from {{ source('jaffle_shop', 'orders') }} as orders
-
 join (
       select
         first_name || ' ' || last_name as name,
