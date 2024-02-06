@@ -20,6 +20,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.10 # Change this to your Python version
+
+      - name: Install dependencies
+        if: github.event_name == 'pull_request'
+        run: pip install -r requirements.txt # Modify this according to your project setup
 
       - name: Get changed files
         id: changed-files
@@ -28,9 +36,11 @@ jobs:
 
       - name: Build only the modified dbt models
         id: build_test
+        if: github.event_name == 'pull_request'
         env:
           ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
+          dbt run-operation clone_database --args "{'source_database':'DBT_PROD_ANALYTICS','destination_database':'DBT_DEV_ANALYTICS'}";
           list_of_models="";
           for file in ${ALL_CHANGED_FILES}; do
             echo "$file was changed"
@@ -42,7 +52,42 @@ jobs:
               fi
             fi
           done
-          echo "dbt build -m $list_of_models"
+          if [ -z "$list_of_models" ]; then
+            echo "No models to build"
+          else
+            dbt build -m $list_of_models;
+          fi
 
         continue-on-error: true
 
+      - name: Update Pull Request
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "${{ steps.build_test.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `#### DBT Build Status 📖\`${{ steps.build_test.outcome }}\`
+            
+            <details><summary>Show DBT Build Output</summary>
+            
+            \`\`\`\n
+            ${process.env.PLAN}
+            \`\`\`
+            
+            </details>
+            
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+      - name: Deploy DBT Models in Production by running the workflow action manually on main branch
+        id: deploy
+        if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+        run: dbt build -t prod
