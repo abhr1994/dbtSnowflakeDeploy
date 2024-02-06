@@ -28,7 +28,6 @@ jobs:
           python-version: 3.10.13 # Change this to your Python version
 
       - name: Install dependencies
-        if: github.event_name == 'pull_request'
         run: pip install -r requirements.txt # Modify this according to your project setup
 
       - name: Get changed files
@@ -49,16 +48,14 @@ jobs:
           for file in ${ALL_CHANGED_FILES}; do
             echo "$file was changed"
             if [[ $file == *.sql ]]; then
-              if [ -z "$sql_files" ]; then
-                list_of_models="$(basename $file .sql)"
-              else
-                list_of_models="list_of_models,$(basename $file .sql)"
-              fi
+              filename=$(basename $file .sql)
+              list_of_models+=$filename" "
             fi
           done
           if [ -z "$list_of_models" ]; then
             echo "No models to build"
           else
+            echo "Running: dbt build -m $list_of_models";
             dbt build -m $list_of_models;
           fi
           exit_code=$?
