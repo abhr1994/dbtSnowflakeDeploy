@@ -1,0 +1,49 @@
+name: "PRODUCTION ENV: DBT Snowflake Workflow"
+
+on:
+  push:
+    branches:
+      - main # Change this to your main branch name
+  pull_request:
+  workflow_dispatch: # Manually triggered workflow
+
+jobs:
+  run_python_script:
+    runs-on: ubuntu-latest
+    env:
+      SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+      DBT_PASSWORD: ${{ secrets.DBT_PASSWORD }}
+      DBT_USER: ${{ secrets.DBT_USER }}
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.10 # Change this to your Python version
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt # Modify this according to your project setup
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v42
+        with:
+          # Avoid using single or double quotes for multiline patterns
+          files: |
+            **.sql
+
+      - name: Build only the modified dbt models
+        id: build_test
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+        run: |
+          for file in ${ALL_CHANGED_FILES}; do
+            echo "$file was changed"
+          done
+
+        continue-on-error: true
+
