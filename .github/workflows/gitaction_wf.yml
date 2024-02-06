@@ -31,9 +31,7 @@ jobs:
       - name: Get changed files
         id: changed-files
         uses: tj-actions/changed-files@v42
-        with:
-          files: |
-            googleAdsAnalysis/models/**.sql
+
 
       - name: Build only the modified dbt models
         id: build_test
