@@ -61,7 +61,7 @@ jobs:
         with:
           github-token: ${{ secrets.AR_GITHUB_TOKEN }}
           script: |
-            console.log(Object.keys(steps.build_test.outputs));
+            console.log(Object.keys(${{ steps.build_test.outputs.stdout }}));
             const output = `#### DBT Build Status 📖\`${{ steps.build_test.outcome }}\`
             
             <details><summary>Show DBT Build Output</summary>
