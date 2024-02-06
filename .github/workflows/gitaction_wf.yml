@@ -10,6 +10,8 @@ on:
 jobs:
   run_dbt_models:
     runs-on: ubuntu-latest
+    outputs:
+      step_output: ${{ steps.build_dbt.outputs.output }}
     env:
       SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
       DBT_PASSWORD: ${{ secrets.DBT_PASSWORD }}
@@ -35,7 +37,7 @@ jobs:
 
 
       - name: Build only the modified dbt models
-        id: build_test
+        id: build_dbt
         if: github.event_name == 'pull_request'
         env:
           ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
@@ -57,7 +59,8 @@ jobs:
           if [ -z "$list_of_models" ]; then
             echo "No models to build"
           else
-            dbt build -m $list_of_models;
+            output=$(dbt build -m $list_of_models)
+            echo "::set-output name=output::$output"
           fi
           exit_code=$?
           if [ $exit_code -ne 0 ]; then
@@ -70,11 +73,10 @@ jobs:
         uses: actions/github-script@v6
         if: github.event_name == 'pull_request'
         env:
-          PLAN: "${{ steps.build_test.outputs.stdout }}"
+          PLAN: "${{ steps.build_test.outputs.output }}"
         with:
           github-token: ${{ secrets.AR_GITHUB_TOKEN }}
           script: |
-            console.log("#### DBT Build Output 📖", '${{ steps.build_test.outputs }}');
             const output = `#### DBT Build Status 📖\`${{ steps.build_test.outcome }}\`
             
             <details><summary>Show DBT Build Output</summary>
