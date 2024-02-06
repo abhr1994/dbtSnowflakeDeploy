@@ -74,7 +74,7 @@ jobs:
         with:
           github-token: ${{ secrets.AR_GITHUB_TOKEN }}
           script: |
-            echo ${process.env.PLAN};
+            console.log("${process.env.PLAN}");
             const output = `#### DBT Build Status 📖\`${{ steps.build_test.outcome }}\`
             
             <details><summary>Show DBT Build Output</summary>
