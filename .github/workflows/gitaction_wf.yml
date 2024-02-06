@@ -31,6 +31,7 @@ jobs:
         env:
           ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
+          echo "Hello Abhishek";
           cd googleAdsAnalysis/;
           dbt deps;
           dbt run-operation clone_database --args "{'source_database':'DBT_PROD_ANALYTICS','destination_database':'DBT_DEV_ANALYTICS'}";
