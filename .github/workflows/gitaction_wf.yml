@@ -8,7 +8,7 @@ on:
   workflow_dispatch: # Manually triggered workflow
 
 jobs:
-  run_python_script:
+  run_dbt_models:
     runs-on: ubuntu-latest
     env:
       SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
@@ -41,6 +41,7 @@ jobs:
           ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
           cd googleAdsAnalysis/;
+          dbt deps;
           dbt run-operation clone_database --args "{'source_database':'DBT_PROD_ANALYTICS','destination_database':'DBT_DEV_ANALYTICS'}";
           list_of_models="";
           for file in ${ALL_CHANGED_FILES}; do
@@ -58,7 +59,11 @@ jobs:
           else
             dbt build -m $list_of_models;
           fi
-
+          exit_code=$?
+          if [ $exit_code -ne 0 ]; then
+              echo "Command failed with exit code $exit_code"
+              exit $exit_code
+          fi
         continue-on-error: true
 
       - name: Update Pull Request
@@ -67,7 +72,7 @@ jobs:
         env:
           PLAN: "${{ steps.build_test.outputs.stdout }}"
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.AR_GITHUB_TOKEN }}
           script: |
             const output = `#### DBT Build Status 📖\`${{ steps.build_test.outcome }}\`
             
@@ -91,4 +96,4 @@ jobs:
       - name: Deploy DBT Models in Production by running the workflow action manually on main branch
         id: deploy
         if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
-        run: cd googleAdsAnalysis/; dbt build -t prod
+        run: cd googleAdsAnalysis/; dbt deps; dbt build -t prod
