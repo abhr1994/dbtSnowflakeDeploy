@@ -40,6 +40,7 @@ jobs:
         env:
           ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
+          cd googleAdsAnalysis/;
           dbt run-operation clone_database --args "{'source_database':'DBT_PROD_ANALYTICS','destination_database':'DBT_DEV_ANALYTICS'}";
           list_of_models="";
           for file in ${ALL_CHANGED_FILES}; do
@@ -90,4 +91,4 @@ jobs:
       - name: Deploy DBT Models in Production by running the workflow action manually on main branch
         id: deploy
         if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
-        run: dbt build -t prod
+        run: cd googleAdsAnalysis/; dbt build -t prod
